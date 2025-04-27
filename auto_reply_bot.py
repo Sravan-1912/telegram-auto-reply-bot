@@ -1,41 +1,25 @@
 from telegram import Update
-from telegram.ext import Updater, MessageHandler, Filters, CallbackContext, CommandHandler
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-BOT_TOKEN = '7592383381:AAE59Mz_d-5Kclf8jRXtYHtE7EwaaerFGL8'  # 🔥 Put your token here!
+# Your Telegram Bot Token
+TOKEN = '7592383381:AAE59Mz_d-5Kclf8jRXtYHtE7EwaaerFGL8'
 
-is_offline = True  # Assume offline when bot starts
+# Create the application
+app = ApplicationBuilder().token(TOKEN).build()
 
-def start(update: Update, context: CallbackContext):
-    global is_offline
-    is_offline = False
-    update.message.reply_text("✅ Bot is now ONLINE. Auto-replies are OFF.")
+# Start command handler
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text('Hello! I am your auto-reply bot. I will answer when Sravan is offline!')
 
-def offline(update: Update, context: CallbackContext):
-    global is_offline
-    is_offline = True
-    update.message.reply_text("🛑 Bot is now OFFLINE. Auto-replies are ON.")
+# Auto reply when user sends any text
+async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_name = update.effective_user.first_name  # Get sender's name
+    reply_text = f"Hi {user_name}, Sravan is currently offline 🚫. He'll get back to you soon!"
+    await update.message.reply_text(reply_text)
 
-def auto_reply(update: Update, context: CallbackContext):
-    if is_offline:
-        chat_id = update.effective_chat.id
-        user_first_name = update.message.from_user.first_name
-        user_message = update.message.text
-        print(f"Received message from {user_first_name}: {user_message}")
-        
-        reply_text = f"Hey {user_first_name}! 👋 I'm currently offline. I'll reply soon!"
-        context.bot.send_message(chat_id=chat_id, text=reply_text)
+# Add handlers
+app.add_handler(CommandHandler('start', start))
+app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), auto_reply))
 
-def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler('start', start))    
-    dp.add_handler(CommandHandler('offline', offline)) 
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, auto_reply))
-
-    print("🚀 Bot is running...")
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
-    main()
+# Start polling
+app.run_polling()
